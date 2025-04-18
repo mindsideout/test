@@ -117,9 +117,156 @@
   </div>
   <div class="card p-4" id="savedScenarios"></div>
 
-  <!-- Your script logic remains unchanged -->
   <script>
-    // your existing JS here (you don’t need to change it)
+    const saved = [];
+    let chart;
+
+    function calculateMPGe() {
+      const costPerKwh = parseFloat(document.getElementById('costPerKwh').value);
+      const milesPerKwh = parseFloat(document.getElementById('milesPerKwh').value);
+      const gasPrice = parseFloat(document.getElementById('gasPrice').value);
+      const name = document.getElementById('scenarioName').value.trim();
+
+      if (isNaN(costPerKwh) || isNaN(milesPerKwh) || isNaN(gasPrice) || !name) {
+        alert("Please enter valid values and a scenario name.");
+        return;
+      }
+
+      const evCostPerMile = costPerKwh / milesPerKwh;
+      const equivalentMPG = gasPrice / evCostPerMile;
+
+      document.getElementById('results').innerHTML = 
+        `<h2 class="text-center">📊 Result</h2><p class="text-center">⚖️ Equivalent MPG: <strong>${equivalentMPG.toFixed(2)} MPG</strong></p>`;
+
+      const scenario = {
+        name,
+        costPerKwh,
+        milesPerKwh,
+        gasPrice,
+        equivalentMPG
+      };
+
+      saved.push(scenario);
+      updateScenarios();
+      updateChart();
+    }
+
+    function updateScenarios() {
+      const container = document.getElementById('savedScenarios');
+      container.innerHTML = '<h2 class="text-center mb-4">📁 Saved Scenarios</h2>';
+
+      saved.forEach((s, i) => {
+        container.innerHTML += `
+          <div class="mb-3 border-bottom pb-2">
+            <strong>${i + 1}. ${s.name}</strong><br>
+            🔌 Electricity Cost: $${s.costPerKwh.toFixed(2)} per kWh<br>
+            🚗 Efficiency: ${s.milesPerKwh.toFixed(2)} miles/kWh<br>
+            ⛽ Gas Price: $${s.gasPrice.toFixed(2)} per gallon<br>
+            ⚖️ Equivalent MPG: <strong>${s.equivalentMPG.toFixed(2)}</strong>
+          </div>
+        `;
+      });
+
+      if (saved.length >= 2) {
+        document.getElementById('mpgChartContainer').style.display = 'block';
+      } else {
+        document.getElementById('mpgChartContainer').style.display = 'none';
+      }
+    }
+
+    function updateChart() {
+      const ctx = document.getElementById('mpgChart');
+      const labels = saved.map(s => s.name);
+      const data = saved.map(s => s.equivalentMPG);
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Equivalent MPG',
+            data,
+            backgroundColor: 'rgba(247, 143, 30, 0.7)',
+            borderColor: 'rgba(247, 143, 30, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    function exportCSV() {
+      let csv = 'Scenario,Electricity Cost ($/kWh),Efficiency (mi/kWh),Gas Price ($/gal),Equivalent MPG\n';
+      saved.forEach(s => {
+        csv += `${s.name},${s.costPerKwh},${s.milesPerKwh},${s.gasPrice},${s.equivalentMPG}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ev_mpg_scenarios.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFillColor(247, 143, 30);
+      doc.rect(0, 0, 210, 20, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      doc.text("EV Equivalent MPG Scenarios", 105, 13, null, null, "center");
+
+      let y = 30;
+
+      saved.forEach((s, i) => {
+        if (i % 2 === 0) {
+          doc.setFillColor(245, 245, 245);
+          doc.rect(10, y - 5, 190, 30, 'F');
+        }
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text(`${i + 1}. ${s.name}`, 12, y);
+        y += 6;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.text(`Electricity Cost: $${s.costPerKwh.toFixed(2)} / kWh`, 14, y);
+        y += 5;
+        doc.text(`Vehicle Efficiency: ${s.milesPerKwh.toFixed(2)} mi/kWh`, 14, y);
+        y += 5;
+        doc.text(`Gas Price: $${s.gasPrice.toFixed(2)} / gallon`, 14, y);
+        y += 5;
+        doc.text(`Equivalent MPG: ${s.equivalentMPG.toFixed(2)}`, 14, y);
+        y += 10;
+
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+
+      doc.save("ev_mpg_scenarios.pdf");
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
   </script>
 </body>
 </html>
