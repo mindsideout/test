@@ -176,32 +176,52 @@
       URL.revokeObjectURL(url);
     }
 
-    function exportPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.setFontSize(12);
-      doc.text("EV Equivalent MPG Scenarios", 10, 10);
+function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
 
-      let y = 20;
-      saved.forEach((s, i) => {
-        doc.text(`${i + 1}. ${s.name}`, 10, y);
-        y += 6;
-        doc.text(`Electricity Cost: $${s.costPerKwh.toFixed(2)} per kWh`, 10, y);
-        y += 6;
-        doc.text(`Efficiency: ${s.milesPerKwh.toFixed(2)} miles/kWh`, 10, y);
-        y += 6;
-        doc.text(`Gas Price: $${s.gasPrice.toFixed(2)} per gallon`, 10, y);
-        y += 6;
-        doc.text(`Equivalent MPG: ${s.equivalentMPG.toFixed(2)}`, 10, y);
-        y += 10;
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-      });
+  // Header
+  doc.setFillColor(54, 162, 235);
+  doc.rect(0, 0, 210, 20, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("EV Equivalent MPG Scenarios", 105, 13, null, null, "center");
 
-      doc.save("ev_mpg_scenarios.pdf");
+  let y = 30;
+
+  saved.forEach((s, i) => {
+    // Background for alternating rows
+    if (i % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(10, y - 5, 190, 30, 'F');
     }
+
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(`${i + 1}. ${s.name}`, 12, y);
+    y += 6;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(`Electricity Cost: $${s.costPerKwh.toFixed(2)} / kWh`, 14, y);
+    y += 5;
+    doc.text(`Vehicle Efficiency: ${s.milesPerKwh.toFixed(2)} mi/kWh`, 14, y);
+    y += 5;
+    doc.text(`Gas Price: $${s.gasPrice.toFixed(2)} / gallon`, 14, y);
+    y += 5;
+    doc.text(`Equivalent MPG: ${s.equivalentMPG.toFixed(2)}`, 14, y);
+    y += 10;
+
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+  });
+
+  doc.save("ev_mpg_scenarios.pdf");
+}
 
     function toggleDarkMode() {
       document.body.classList.toggle('dark-mode');
